@@ -19,48 +19,37 @@ public class SecurityConfig {
 
 	@SuppressWarnings("removal")
 	@Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-        .authorizeHttpRequests((requests) -> requests
-                .requestMatchers("/", "/home", "/signup", "/h2-console/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .formLogin((form) -> form
-                .loginPage("/login")
-                .defaultSuccessUrl("/home", true)
-                .permitAll()
-            )
-            .logout((logout) -> logout.permitAll());
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		http.authorizeHttpRequests((requests) -> requests.requestMatchers("/", "/signup", "/h2-console/**").permitAll()
+				.anyRequest().authenticated())
+				.formLogin((form) -> form.loginPage("/login").defaultSuccessUrl("/home", true).permitAll())
+				.logout((logout) -> logout.logoutUrl("/logout").logoutSuccessUrl("/login?logout")
+						.invalidateHttpSession(true).deleteCookies("JSESSIONID").permitAll())
+				.sessionManagement((session) -> session.invalidSessionUrl("/login?session=expired").maximumSessions(1)
+						.expiredUrl("/login?session=expired"));
 
-        http.csrf().disable();
-        http.headers().frameOptions().disable();
+		http.csrf().disable();
+		http.headers().frameOptions().disable();
 
-        return http.build();
-    }
+		return http.build();
+	}
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
 
-@Bean
-public UserDetailsService userDetailsService(UserRepository userRepository) {
-    return username -> {
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found");
-        }
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .roles("USER")
-                .build();
-    };
-    
-}
+	@Bean
+	public UserDetailsService userDetailsService(UserRepository userRepository) {
+		return username -> {
+			User user = userRepository.findByUsername(username);
+			if (user == null) {
+				throw new UsernameNotFoundException("User not found");
+			}
+			return org.springframework.security.core.userdetails.User.builder().username(user.getUsername())
+					.password(user.getPassword()).roles("USER").build();
+		};
+
+	}
 
 }
-
-
-  
-
